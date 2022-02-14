@@ -9,6 +9,7 @@ export let program = `
 frame(NumPoints, Size, RealModel, Points, LearntModel, Error) :-
     real_model(Size, RealModel),
     create_points(RealModel, Size, NumPoints, Points),
+    are_points_valid(Points, RealModel),
     learn_model(Points, LearntModel),
     compute_error(Size, NumPoints, RealModel, LearntModel, Error).
 
@@ -47,6 +48,15 @@ point_in_frame([X1-Y1, X2-Y2, X3-Y3, X4-Y4], X-Y) :-
 point_in_rect([X1-Y1, X2-Y2], X-Y) :-
     X >= X1, X =< X2,
     Y =< Y1, Y >= Y2.
+
+are_points_valid(Points, [_-_, _-_, X1-Y1, X2-Y2]) :-
+    filter_points(Points, in, InPoints),
+    length(InPoints, LenIn),
+    LenIn >= 2,
+    filter_points_in_rect(Points, [X1-Y1, X2-Y2], InnerP),
+    filter_points(InnerP, out, InnerOutP),
+    length(InnerOutP, LenOut),
+    LenOut >= 2.
 
 learn_model(Points, [X1-Y1, X2-Y2, X3-Y3, X4-Y4]) :- 
     learn_outter_rect(Points, [X1-Y1, X2-Y2]),
@@ -143,11 +153,15 @@ export const consultFrame = (numPoints, size, callback) => {
             session.query(goal, {
                 success: function() {
                     session.answer(a => {
-                        let r = parseModel(a.lookup("R").toJavaScript());
-                        let p = parsePoints(a.lookup("P").toJavaScript());
-                        let m = parseModel(a.lookup("M").toJavaScript());
-                        let e = parseError(a.lookup("E").toJavaScript());
-                        callback(r, p, m, e);
+                        if (a === false) {
+                            callback(false, 0, 0, 0, 0)
+                        } else {
+                            let r = parseModel(a.lookup("R").toJavaScript());
+                            let p = parsePoints(a.lookup("P").toJavaScript());
+                            let m = parseModel(a.lookup("M").toJavaScript());
+                            let e = parseError(a.lookup("E").toJavaScript());
+                            callback(true, r, p, m, e);
+                        }
                     });
                 }
             });

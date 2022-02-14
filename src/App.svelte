@@ -1,6 +1,8 @@
 <script>
 	import {consultFrame} from './prolog';
+	import {notifications} from './notifications.js'
 	import Graph from './Graph.svelte';
+	import Toast from './Toast.svelte'
 
 	let numPoints = 150;
 	let size = 600;
@@ -12,11 +14,15 @@
 	let showLearnt = true;
 
 	const learnModel = () => {
-		consultFrame(numPoints, size, (r, p, m, e) => {
-			realModel = r;
-			points = p;
-			learntModel = m;
-			error = e;
+		consultFrame(numPoints, size, (result, r, p, m, e) => {
+			if (result) {
+				realModel = r;
+				points = p;
+				learntModel = m;
+				error = e;
+			} else {
+				notifications.danger('Model cannot be learnt from the generated points, try again...', 3000)
+			}
 		});
 	}
 
@@ -46,6 +52,7 @@
 	</label>
 	
 	<Graph {...graphProps} />
+	<Toast />
 </main>
 
 <style>
